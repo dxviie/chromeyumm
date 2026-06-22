@@ -49,10 +49,8 @@ This deliberately mirrors how the bundled `cefsimple` sample is structured, so w
 reuse CEF's app-bundle + helper-process bundling machinery. That bundling is fiddly
 and version-specific on macOS (main app bundle, multiple helper bundles for the
 GPU/renderer/plugin sub-processes, framework copy/sign steps), so cloning the
-`cefsimple` pattern is far safer than hand-rolling it.
-
-> The exact CMake wiring (target, framework links, helper bundles, Info.plist) lands
-> in **Step 4**. Nothing in this directory is wired into the CEF build yet.
+`cefsimple` pattern is far safer than hand-rolling it. The concrete wiring lives in
+this directory's `CMakeLists.txt` and `mac/*.plist`; see **Build & run** below.
 
 ## Build & run
 
@@ -101,14 +99,10 @@ All steps run **on a Mac** — this spike cannot be compiled on Linux.
    confirm a server named **"Chromeyumm OSR Spike"** appears showing the
    spinning test page. That is the Q2 = YES signal.
 
-Once Q1 passes (accelerated paint with a non-null IOSurface), every accelerated
-frame is wrapped as a Metal texture and published to a Syphon server named
-**"Chromeyumm OSR Spike"** — open Syphon's **"Simple Client"** receiver to
-confirm the live frames appear there (that is the Q2 = YES signal).
-
-> **Step 4 build note:** the CMake target must link `Syphon.framework` plus the
-> `Metal`, `IOSurface`, and `CoreVideo` frameworks, and must compile
-> `syphon_bridge.mm` with ARC (`-fobjc-arc`).
+> **Build note:** `CMakeLists.txt` links `Syphon.framework` plus the `Metal`,
+> `IOSurface`, and `CoreVideo` frameworks, and compiles `syphon_bridge.mm` with
+> ARC (`-fobjc-arc`). It also needs `-DSYPHON_FRAMEWORK_DIR` (step 5) and will
+> fail configuration with a clear message if that is unset.
 
 **Decision gate** once the spike runs:
 
