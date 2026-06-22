@@ -59,6 +59,10 @@ GPU/renderer/plugin sub-processes, framework copy/sign steps), so cloning the
 > Placeholder — filled in by later steps:
 > - **Step 2** adds the OSR probe (a `CefRenderHandler` that logs whether
 >   `OnAcceleratedPaint` fires and whether the `IOSurface` is non-null).
+>
+> The probe logs IOSurface presence, size, and pixel format via `LOG(INFO)`
+> when `OnAcceleratedPaint` fires, and warns loudly via `LOG(WARNING)` if the
+> CPU `OnPaint` path is hit instead (the Q1 = NO signal).
 > - **Step 3** adds the Syphon bridge (IOSurface → Metal texture →
 >   `SyphonMetalServer`).
 > - **Step 4** adds the build glue (CMake target + bundle wiring).
@@ -74,6 +78,6 @@ GPU/renderer/plugin sub-processes, framework copy/sign steps), so cloning the
 ## Status checklist
 
 - [x] Step 1 — Scaffold + docs (this directory: `README.md`, `NOTES.md`).
-- [ ] Step 2 — OSR probe (`OnAcceleratedPaint` / IOSurface logging).
+- [x] Step 2 — OSR probe (`OnAcceleratedPaint` / IOSurface logging).
 - [ ] Step 3 — Syphon bridge (IOSurface → Metal → `SyphonMetalServer`).
 - [ ] Step 4 — Build glue (CMake target + macOS bundle wiring).
