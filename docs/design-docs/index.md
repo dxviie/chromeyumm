@@ -13,6 +13,7 @@ Architecture decision records for Chromeyumm. Each doc captures context, options
 | [screen-ddp.md](screen-ddp.md) | Accepted | 2026-05 | Standalone DXGI screen-capture to DDP sender |
 | [harness-engineering.md](harness-engineering.md) | Reference | 2025-01 | Docs system methodology |
 | [multi-machine-sync.md](multi-machine-sync.md) | Proposed | 2026-04 | UDP shared clock + frame-hold for multi-PC display sync |
+| [syphon-mac-output.md](syphon-mac-output.md) | Proposed | 2026-06 | Syphon (macOS) GPU output mirroring Spout — feasibility |
 
 ## Related
 
