@@ -131,7 +131,8 @@ committed change.
 1. **CEF macOS accelerated paint.** Does the CEF build Chromeyumm targets actually
    invoke `OnAcceleratedPaint` (with a usable `shared_texture_io_surface`) on
    macOS, or is a newer/patched CEF required? This gates Option A and must be
-   answered with a spike before implementation.
+   answered with a spike before implementation. A runnable spike that answers
+   this end-to-end lives in `spikes/syphon-osr/` (see its README).
 2. **Pixel format / orientation / color.** BGRA vs sRGB, and the `flipped:`
    argument to `publishFrameTexture:` — must match what Spout produces so existing
    receivers look identical.

@@ -54,18 +54,52 @@ GPU/renderer/plugin sub-processes, framework copy/sign steps), so cloning the
 > The exact CMake wiring (target, framework links, helper bundles, Info.plist) lands
 > in **Step 4**. Nothing in this directory is wired into the CEF build yet.
 
-## Build & run / Decision gate
+## Build & run
 
-> Placeholder — filled in by later steps:
-> - **Step 2** adds the OSR probe (a `CefRenderHandler` that logs whether
->   `OnAcceleratedPaint` fires and whether the `IOSurface` is non-null).
->
-> The probe logs IOSurface presence, size, and pixel format via `LOG(INFO)`
-> when `OnAcceleratedPaint` fires, and warns loudly via `LOG(WARNING)` if the
-> CPU `OnPaint` path is hit instead (the Q1 = NO signal).
-> - **Step 3** adds the Syphon bridge (IOSurface → Metal texture →
->   `SyphonMetalServer`).
-> - **Step 4** adds the build glue (CMake target + bundle wiring).
+All steps run **on a Mac** — this spike cannot be compiled on Linux.
+
+1. **Download + unpack the CEF distribution.** Get the **CEF 147 macOS 64-bit
+   "Standard Distribution"** (same version pinned in
+   [`scripts/setup-vendors.ts`](../../scripts/setup-vendors.ts)) from
+   <https://cef-builds.spotifycdn.com/index.html> and unpack it, e.g. to
+   `~/cef-distro`. The Standard Distribution includes `tests/cefsimple`, the
+   `cmake/` macros, and the CEF framework.
+2. **Build `Syphon.framework`.** Clone
+   <https://github.com/Syphon/Syphon-Framework>, build the framework target in
+   Xcode (Release), and note the output directory that *contains*
+   `Syphon.framework` (e.g. `~/Syphon-Framework/build/Release`).
+3. **Copy this spike into the distro.** `cp -R` (or symlink) this
+   `spikes/syphon-osr` directory to `<cef-distro>/tests/syphon-osr`:
+   ```sh
+   cp -R spikes/syphon-osr ~/cef-distro/tests/syphon-osr
+   ```
+4. **Wire it into the distro build.** Add the spike next to the existing
+   cefsimple line in `<cef-distro>/CMakeLists.txt`:
+   ```cmake
+   add_subdirectory(tests/cefsimple)
+   add_subdirectory(tests/syphon-osr)   # <-- add this
+   ```
+5. **Configure + build.** From a build dir inside the distro, point CMake at the
+   Syphon framework dir from step 2. Build the `syphon_osr` target.
+   ```sh
+   cd ~/cef-distro && mkdir -p build && cd build
+   # Apple Silicon (arm64):
+   cmake -G "Xcode" -DPROJECT_ARCH=arm64 \
+     -DSYPHON_FRAMEWORK_DIR=~/Syphon-Framework/build/Release ..
+   cmake --build . --target syphon_osr --config Release
+   ```
+   For Intel use `-DPROJECT_ARCH=x86_64`. A Ninja generator
+   (`-G Ninja`) works too. The `syphon_osr` app bundle lands under
+   `build/tests/syphon-osr/Release/Syphon OSR Spike.app` (path depends on
+   generator/config).
+6. **Run + watch the console.** Launch `Syphon OSR Spike.app` (from Finder, or
+   `./.../Syphon\ OSR\ Spike.app/Contents/MacOS/syphon_osr` for inline stdout).
+   Watch the console/stdout for the probe's `[Q1]` log lines (does
+   `OnAcceleratedPaint` fire with a non-null `IOSurface`?) and the bridge's
+   `[Q2]` log lines (is the Metal texture wrapped and published?).
+7. **Confirm in a Syphon receiver.** Open Syphon's **"Simple Client"** and
+   confirm a server named **"Chromeyumm OSR Spike"** appears showing the
+   spinning test page. That is the Q2 = YES signal.
 
 Once Q1 passes (accelerated paint with a non-null IOSurface), every accelerated
 frame is wrapped as a Metal texture and published to a Syphon server named
@@ -89,4 +123,11 @@ confirm the live frames appear there (that is the Q2 = YES signal).
 - [x] Step 1 — Scaffold + docs (this directory: `README.md`, `NOTES.md`).
 - [x] Step 2 — OSR probe (`OnAcceleratedPaint` / IOSurface logging).
 - [x] Step 3 — Syphon bridge (IOSurface → Metal → `SyphonMetalServer`).
-- [ ] Step 4 — Build glue (CMake target + macOS bundle wiring).
+- [x] Step 4 — Build glue (CMake target + macOS bundle wiring).
+
+## Cleanup
+
+This is a **throwaway spike**. Once Q1/Q2 are answered, record the result in
+[`docs/design-docs/syphon-mac-output.md`](../../docs/design-docs/syphon-mac-output.md)
+(the "Open Questions / Risks" / Decision sections) and delete
+`spikes/syphon-osr/`.
