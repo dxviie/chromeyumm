@@ -21,7 +21,8 @@ constexpr uint64_t kLogEveryNFrames = 60;
 
 }  // namespace
 
-SyphonOsrHandler::SyphonOsrHandler() = default;
+SyphonOsrHandler::SyphonOsrHandler()
+    : syphon_bridge_(std::make_unique<SyphonBridge>()) {}
 
 SyphonOsrHandler::~SyphonOsrHandler() = default;
 
@@ -93,11 +94,13 @@ void SyphonOsrHandler::OnAcceleratedPaint(
                 << " ('" << fourcc << "') — Q1 = YES.";
     }
 
-    // STEP 3: hand info.shared_texture_io_surface (this IOSurfaceRef) to the
-    // Syphon bridge here. The bridge wraps it as a Metal texture
-    // (newTextureWithDescriptor:iosurface:plane:) and publishes via
-    // SyphonMetalServer::publishFrameTexture:... See NOTES.md.
-    // e.g.  syphon_bridge_->Publish(io_surface);
+    // Step 3: hand this IOSurfaceRef to the Syphon bridge. The bridge wraps it
+    // as a Metal texture (newTextureWithDescriptor:iosurface:plane:) and
+    // publishes via SyphonMetalServer::publishFrameTexture:... See NOTES.md.
+    // Called on EVERY accelerated frame (not gated by should_log); the bridge
+    // lazily initialises on the first call and no-ops if Metal/Syphon fail.
+    syphon_bridge_->EnsureStarted("Chromeyumm OSR Spike");
+    syphon_bridge_->Publish(io_surface);
   } else if (should_log) {
     LOG(WARNING) << "[Q1] OnAcceleratedPaint fired but "
                     "shared_texture_io_surface is NULL — shared textures not "
@@ -121,6 +124,8 @@ bool SyphonOsrHandler::DoClose(CefRefPtr<CefBrowser> browser) {
 
 void SyphonOsrHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
+  // Tear down the Syphon server before dropping the browser reference.
+  syphon_bridge_->Stop();
   {
     base::AutoLock lock_scope(lock_);
     browser_ = nullptr;

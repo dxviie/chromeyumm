@@ -6,10 +6,14 @@
 #ifndef CEF_SPIKES_SYPHON_OSR_SYPHON_OSR_HANDLER_H_
 #define CEF_SPIKES_SYPHON_OSR_SYPHON_OSR_HANDLER_H_
 
+#include <memory>
+
 #include "include/base/cef_lock.h"
 #include "include/cef_client.h"
 #include "include/cef_life_span_handler.h"
 #include "include/cef_render_handler.h"
+
+#include "syphon_bridge.h"
 
 // Single-browser CefClient that implements the offscreen render handler.
 // Its job in Step 2 is purely diagnostic: report whether OnAcceleratedPaint
@@ -54,6 +58,10 @@ class SyphonOsrHandler : public CefClient,
   // Diagnostic counters / one-shot guards (UI-thread only).
   uint64_t accelerated_frame_count_ = 0;
   bool logged_onpaint_warning_ = false;
+
+  // Step 3: IOSurface -> Metal texture -> SyphonMetalServer bridge. The
+  // Objective-C++/Metal/Syphon state is hidden behind this pimpl interface.
+  std::unique_ptr<SyphonBridge> syphon_bridge_;
 
   IMPLEMENT_REFCOUNTING(SyphonOsrHandler);
   DISALLOW_COPY_AND_ASSIGN(SyphonOsrHandler);

@@ -67,6 +67,15 @@ GPU/renderer/plugin sub-processes, framework copy/sign steps), so cloning the
 >   `SyphonMetalServer`).
 > - **Step 4** adds the build glue (CMake target + bundle wiring).
 
+Once Q1 passes (accelerated paint with a non-null IOSurface), every accelerated
+frame is wrapped as a Metal texture and published to a Syphon server named
+**"Chromeyumm OSR Spike"** — open Syphon's **"Simple Client"** receiver to
+confirm the live frames appear there (that is the Q2 = YES signal).
+
+> **Step 4 build note:** the CMake target must link `Syphon.framework` plus the
+> `Metal`, `IOSurface`, and `CoreVideo` frameworks, and must compile
+> `syphon_bridge.mm` with ARC (`-fobjc-arc`).
+
 **Decision gate** once the spike runs:
 
 - If `OnAcceleratedPaint` fires with a **non-null `IOSurface`**, then **Option A**
@@ -79,5 +88,5 @@ GPU/renderer/plugin sub-processes, framework copy/sign steps), so cloning the
 
 - [x] Step 1 — Scaffold + docs (this directory: `README.md`, `NOTES.md`).
 - [x] Step 2 — OSR probe (`OnAcceleratedPaint` / IOSurface logging).
-- [ ] Step 3 — Syphon bridge (IOSurface → Metal → `SyphonMetalServer`).
+- [x] Step 3 — Syphon bridge (IOSurface → Metal → `SyphonMetalServer`).
 - [ ] Step 4 — Build glue (CMake target + macOS bundle wiring).
